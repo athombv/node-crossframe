@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+	<head>
+
+		<script type="text/javascript" src="../src/crossframe.js"></script>
+		<script type="text/javascript">
+		window.addEventListener('load', function(){
+			var cf = new CrossFrame();
+				cf.on('parent_to_iframe', function( data, callback ){
+					console.log('on parent_to_iframe', data);
+					callback( new Error('Test error!') );
+				})
+				cf.emit('iframe_to_parent', { foo: 'bar' }, function( err, result ){
+					console.log('my_message callback', 'err:', err, 'result:', result);
+				})
+		});
+		</script>
+
+	</head>
+	<body>
+	</body>
+</html>
