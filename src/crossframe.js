@@ -1,4 +1,9 @@
-var postMessageEvent = 'CROSSFRAME';
+/*
+	CrossFrame.js - v1.0.0
+	Created by Emile Nijssen - www.emilenijssen.nl
+*/
+
+var POST_MESSAGE_EVENT = 'CROSSFRAME';
 
 function CrossFrame( el ) {
 
@@ -13,10 +18,18 @@ function CrossFrame( el ) {
 
 }
 
-CrossFrame.prototype._onMessage = function( e ){
-	//console.log('_onMessage', window.location.href, arguments)
+CrossFrame.prototype._debug = function(){
+	if( window.location.href.indexOf('http://127.0.0.1') === 0 ) {
+		console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
+	}
+}
 
-	var obj = this._jsonToObj( e.data );
+CrossFrame.prototype._onMessage = function( e ){
+	this._debug('_onMessage', window.location.href, arguments)
+
+	if( e.data.indexOf(POST_MESSAGE_EVENT) !== 0 ) return;
+
+	var obj = this._jsonToObj( e.data.substr( POST_MESSAGE_EVENT.length ) );
 	if( obj.type === 'tx' ) {
 
 		var callback = function( err, result ){
@@ -81,7 +94,7 @@ CrossFrame.prototype._post = function( message ) {
 	}
 
 	if( target ) {
-		target.postMessage( this._objToJson(message), '*' );
+		target.postMessage( POST_MESSAGE_EVENT + this._objToJson(message), '*' );
 	}
 
 }
