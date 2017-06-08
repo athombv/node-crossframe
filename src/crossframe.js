@@ -27,6 +27,7 @@ CrossFrame.prototype._debug = function(){
 CrossFrame.prototype._onMessage = function( e ){
 	this._debug('_onMessage', window.location.href, arguments)
 
+	if( !e.data || typeof e.data !== 'string' ) return;
 	if( e.data.indexOf(POST_MESSAGE_EVENT) !== 0 ) return;
 
 	var obj = this._jsonToObj( e.data.substr( POST_MESSAGE_EVENT.length ) );
