@@ -6,16 +6,23 @@
 var POST_MESSAGE_EVENT = 'CROSSFRAME';
 
 function CrossFrame( el ) {
-
+	
+	this._onMessage = this._onMessage.bind(this);
 	this._el = el;
-	this._eventlisteners = {};
-	this._callbackFns = {};
-	this._callbackId = 0;
 
-	window.addEventListener('message', this._onMessage.bind(this));
+	this._clear();
+
+	window.addEventListener('message', this._onMessage);
 
 	return this;
 
+}
+
+CrossFrame.prototype._clear = function(){
+	this._eventlisteners = {};
+	this._callbackFns = {};
+	this._callbackId = 0;
+	window.addEventListener('message', this._onMessage);
 }
 
 CrossFrame.prototype._debug = function(){
@@ -26,7 +33,7 @@ CrossFrame.prototype._debug = function(){
 
 CrossFrame.prototype._onMessage = function( e ){
 	this._debug('_onMessage', window.location.href, arguments)
-
+	
 	if( !e.data || typeof e.data !== 'string' ) return;
 	if( e.data.indexOf(POST_MESSAGE_EVENT) !== 0 ) return;
 
@@ -83,6 +90,10 @@ CrossFrame.prototype.emit = function( event, data, callback ) {
 	this._post( message );
 
 	return this;
+}
+
+CrossFrame.prototype.destroy = function(){
+	this._clear();
 }
 
 CrossFrame.prototype._post = function( message ) {
