@@ -1,136 +1,145 @@
-/*
-	CrossFrame.js - v1.0.0
-	Created by Emile Nijssen - www.emilenijssen.nl
-*/
+(function() {
+	/*
+		CrossFrame.js - v1.0.0
+		Created by Emile Nijssen - www.emilenijssen.nl
+	*/
 
-var POST_MESSAGE_EVENT = 'CROSSFRAME';
+	var POST_MESSAGE_EVENT = 'CROSSFRAME';
 
-function CrossFrame( el ) {
-	
-	this._onMessage = this._onMessage.bind(this);
-	this._el = el;
+	function CrossFrame( el ) {
 
-	this._clear();
+		this._onMessage = this._onMessage.bind(this);
+		this._el = el;
 
-	window.addEventListener('message', this._onMessage);
+		this._clear();
 
-	return this;
+		window.addEventListener('message', this._onMessage);
 
-}
+		return this;
 
-CrossFrame.prototype._clear = function(){
-	this._eventlisteners = {};
-	this._callbackFns = {};
-	this._callbackId = 0;
-	window.addEventListener('message', this._onMessage);
-}
-
-CrossFrame.prototype._debug = function(){
-	if( window.location.href.indexOf('http://127.0.0.1') === 0 ) {
-		console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
 	}
-}
 
-CrossFrame.prototype._onMessage = function( e ){
-	this._debug('_onMessage', window.location.href, arguments)
-	
-	if( !e.data || typeof e.data !== 'string' ) return;
-	if( e.data.indexOf(POST_MESSAGE_EVENT) !== 0 ) return;
+	CrossFrame.prototype._clear = function(){
+		this._eventlisteners = {};
+		this._callbackFns = {};
+		this._callbackId = 0;
+		window.addEventListener('message', this._onMessage);
+	}
 
-	var obj = this._jsonToObj( e.data.substr( POST_MESSAGE_EVENT.length ) );
-	if( obj.type === 'tx' ) {
+	CrossFrame.prototype._debug = function(){
+		if( window.location.href.indexOf('http://127.0.0.1') === 0 ) {
+			console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
+		}
+	}
 
-		var callback = function( err, result ){
-			var message = {
-				type: 'cb',
-				args: args = Array.prototype.slice.call(arguments),
-				callbackId: obj.callbackId
+	CrossFrame.prototype._onMessage = function( e ){
+		this._debug('_onMessage', window.location.href, arguments)
+
+		if( !e.data || typeof e.data !== 'string' ) return;
+		if( e.data.indexOf(POST_MESSAGE_EVENT) !== 0 ) return;
+
+		var obj = this._jsonToObj( e.data.substr( POST_MESSAGE_EVENT.length ) );
+		if( obj.type === 'tx' ) {
+
+			var callback = function( err, result ){
+				var message = {
+					type: 'cb',
+					args: args = Array.prototype.slice.call(arguments),
+					callbackId: obj.callbackId
+				}
+
+				this._post( message );
+			}.bind(this)
+
+			var eventListeners = this._eventlisteners[ obj.event ];
+			if( eventListeners ) {
+				eventListeners.forEach(function(eventListener){
+					eventListener.call( eventListener, obj.data, callback )
+				})
 			}
 
-			this._post( message );
-		}.bind(this)
-
-		var eventListeners = this._eventlisteners[ obj.event ];
-		if( eventListeners ) {
-			eventListeners.forEach(function(eventListener){
-				eventListener.call( eventListener, obj.data, callback )
-			})
-		}
-
-	} else if( obj.type === 'cb' ) {
-		var callbackFn = this._callbackFns[ obj.callbackId ];
-		if( callbackFn ) {
-			callbackFn.apply( callbackFn, obj.args );
-		}
-	}
-}
-
-CrossFrame.prototype.on = function( event, callback ) {
-	this._eventlisteners[ event ] = this._eventlisteners[ event ] || [];
-	this._eventlisteners[ event ].push( callback );
-
-	return this;
-}
-
-CrossFrame.prototype.emit = function( event, data, callback ) {
-
-	var callbackId = null;
-	if( typeof callback === 'function' ) {
-		callbackId = ++this._callbackId;
-		this._callbackFns[ callbackId ] = callback;
-	}
-
-	var message = {
-		type: 'tx',
-		event: event,
-		data: data,
-		callbackId: callbackId
-	}
-
-	this._post( message );
-
-	return this;
-}
-
-CrossFrame.prototype.destroy = function(){
-	this._clear();
-}
-
-CrossFrame.prototype._post = function( message ) {
-
-	var target;
-	if( this._el ) {
-		target = this._el.contentWindow;
-	} else {
-		target = window.parent;
-	}
-
-	if( target ) {
-		target.postMessage( POST_MESSAGE_EVENT + this._objToJson(message), '*' );
-	}
-
-}
-
-CrossFrame.prototype._objToJson = function( obj ) {
-	return JSON.stringify( obj, function replacer( key, value ) {
-		if( value instanceof Error ) {
-			return {
-				type: 'Error',
-				data: value.message
+		} else if( obj.type === 'cb' ) {
+			var callbackFn = this._callbackFns[ obj.callbackId ];
+			if( callbackFn ) {
+				callbackFn.apply( callbackFn, obj.args );
 			}
 		}
+	}
 
-		return value;
-	});
-}
+	CrossFrame.prototype.on = function( event, callback ) {
+		this._eventlisteners[ event ] = this._eventlisteners[ event ] || [];
+		this._eventlisteners[ event ].push( callback );
 
-CrossFrame.prototype._jsonToObj = function( json ) {
-	return JSON.parse( json, function reviver( key, value ) {
-		if( value && value.type ) {
-			if( value.type === 'Error' ) {
-				return new Error( value.data );
-			}
+		return this;
+	}
+
+	CrossFrame.prototype.emit = function( event, data, callback ) {
+
+		var callbackId = null;
+		if( typeof callback === 'function' ) {
+			callbackId = ++this._callbackId;
+			this._callbackFns[ callbackId ] = callback;
 		}
-		return value;
-	});
-}
+
+		var message = {
+			type: 'tx',
+			event: event,
+			data: data,
+			callbackId: callbackId
+		}
+
+		this._post( message );
+
+		return this;
+	}
+
+	CrossFrame.prototype.destroy = function(){
+		this._clear();
+	}
+
+	CrossFrame.prototype._post = function( message ) {
+
+		var target;
+		if (this._el) {
+			target = this._el.contentWindow ? this._el.contentWindow : this._el;
+		} else if (window && window.parent) {
+			target = window.parent;
+		}
+
+		if( target ) {
+			target.postMessage( POST_MESSAGE_EVENT + this._objToJson(message), '*' );
+		}
+
+	}
+
+	CrossFrame.prototype._objToJson = function( obj ) {
+		return JSON.stringify( obj, function replacer( key, value ) {
+			if( value instanceof Error ) {
+				return {
+					type: 'Error',
+					data: value.message
+				}
+			}
+
+			return value;
+		});
+	}
+
+	CrossFrame.prototype._jsonToObj = function( json ) {
+		return JSON.parse( json, function reviver( key, value ) {
+			if( value && value.type ) {
+				if( value.type === 'Error' ) {
+					return new Error( value.data );
+				}
+			}
+			return value;
+		});
+	}
+
+	if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+		module.exports = CrossFrame;
+	}
+	else {
+		window.CrossFrame = CrossFrame;
+	}
+})()
