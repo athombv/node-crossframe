@@ -22,7 +22,13 @@
 		});
 	}
 
-	function CrossFrame( el ) {
+	function CrossFrame( el, opts ) {
+		
+		opts = opts || {};
+		
+		if( typeof opts.throttle !== 'number' ) {
+			opts.throttle = 50;
+		}
 
 		this.onMessage = this.onMessage.bind(this);
 		this._clear = this._clear.bind(this);
@@ -32,6 +38,8 @@
 		this.destroy = this.destroy.bind(this);
 		this.ready = this.ready.bind(this);
 		this._ready = this._ready.bind(this);
+		this._post = this._post.bind(this);
+		this._post = throttle( this._post, opts.throttle )
 		
 		this._el = el;
 
