@@ -14,13 +14,15 @@ _index.html_
 window.addEventListener('load', function(){
 	var frameEl = document.getElementById('myframe');
 	var cf = new CrossFrame( frameEl );
+	cf.ready(function(){
 		cf.on('iframe_to_parent', function( data, callback ) {
 			console.log('on iframe_to_parent', data);
 			callback( null, true );
-		})
+		});
 		cf.emit('parent_to_iframe', { x: 'y' }, function( err, result ){
 			console.log('parent_to_iframe callback', 'err:', err, 'result:', result);
-		})
+		});
+	});
 });
 </script>
 
@@ -34,13 +36,15 @@ _frame.html_
 <script type="text/javascript">
 window.addEventListener('load', function(){
 	var cf = new CrossFrame();
+	cf.ready(function(){
 		cf.on('parent_to_iframe', function( data, callback ){
 			console.log('on parent_to_iframe', data);
 			callback( new Error('Test error!') );
-		})
+		});
 		cf.emit('iframe_to_parent', { foo: 'bar' }, function( err, result ){
 			console.log('my_message callback', 'err:', err, 'result:', result);
-		})
+		});
+	});
 });
 </script>
 ```
