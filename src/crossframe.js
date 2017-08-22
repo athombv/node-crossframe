@@ -7,7 +7,7 @@
 
 	var EVENT_MESSAGE = 'CROSSFRAME_MESSAGE';
 	var EVENT_READY = 'CROSSFRAME_READY';
-	
+
 	var webviewReady = false;
 	var webviewReadyFns = [];
 	var webview = ( getParameterByName('webview') === '1' );
@@ -23,9 +23,9 @@
 	}
 
 	function CrossFrame( el, opts ) {
-		
+
 		this._opts = opts || {};
-		
+
 		if( typeof this._opts.delay !== 'number' ) {
 			this._opts.delay = 50;
 		}
@@ -42,11 +42,11 @@
 		this._posting = false;
 		this._postNext = this._postNext.bind(this);
 		this._postQueue = [];
-		
+
 		this._el = el;
 
 		this._clear();
-		
+
 		if( webview ) {
 			if( document && document.addEventListener ) {
 				document.addEventListener('message', this.onMessage);
@@ -56,13 +56,13 @@
 				window.addEventListener('message', this.onMessage);
 			}
 		}
-	
+
 		if( webview ) {
 			onWebviewReady(function(){
-				this._ready();				
+				this._ready();
 			}.bind(this));
 		} else {
-			this._ready();		
+			this._ready();
 		}
 
 		return this;
@@ -75,7 +75,7 @@
 		this._callbackId = 0;
 		this._readyFns = [];
 		this._isReady = false;
-		
+
 		if( webview ) {
 			if( document && document.removeEventListener ) {
 				document.removeEventListener('message', this.onMessage);
@@ -88,13 +88,15 @@
 	}
 
 	CrossFrame.prototype._debug = function(){
-		console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
+		if (window.DEBUG === true) {
+            console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
+        }
 	}
 
 	CrossFrame.prototype.onMessage = function( e ){
 		if( !e.data || typeof e.data !== 'string' ) return;
 		if( e.data.indexOf(EVENT_MESSAGE) !== 0 ) return;
-		
+
 		this._debug('onMessage', e)
 
 		var obj = jsonToObj( e.data.substr( EVENT_MESSAGE.length ) );
@@ -155,20 +157,20 @@
 	CrossFrame.prototype.destroy = function(){
 		this._clear();
 	}
-	
+
 	CrossFrame.prototype.ready = function( callback ){
-		
+
 		if( this._isReady ) {
 			callback();
-		} else {		
+		} else {
 			this._readyFns.push( callback );
 		}
 	}
-	
+
 	CrossFrame.prototype._ready = function() {
-		
+
 		this._isReady = true;
-		
+
 		this._readyFns.forEach(function(readyFn){
 			readyFn();
 		});
@@ -181,19 +183,19 @@
 	CrossFrame.prototype.postMessage = function( message ) {
 		this._post( EVENT_MESSAGE + objToJson(message) );
 	}
-	
+
 	CrossFrame.prototype._post = function( message ) {
 		this._debug('_post()', message);
-		
+
 		this._postQueue.push( message );
 		this._postNext();
-		
+
 	}
-	
+
 	CrossFrame.prototype._postNext = function() {
-			
+
 		if( this._posting )	return;
-		
+
 		var message = this._postQueue.shift();
 		if( typeof message === 'undefined' ) return;
 
@@ -207,13 +209,13 @@
 		if( target ) {
 			this._posting = true;
 			target.postMessage( message, '*' );
-		
+
 			setTimeout(function(){
 				this._posting = false;
 				this._postNext();
 			}.bind(this), this._opts.delay );
 		}
-			
+
 	}
 
 	if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
@@ -222,7 +224,7 @@
 	else {
 		window.CrossFrame = CrossFrame;
 	}
-	
+
 	function onWebviewReady( callback ) {
 		if( webviewReady ) {
 			callback();
@@ -230,10 +232,10 @@
 			webviewReadyFns.push( callback );
 		}
 	}
-	
+
 	function getParameterByName(name, url) {
-		if( window 
-		 && window.location 
+		if( window
+		 && window.location
 		 && window.location.href ) {
 		    if (!url) url = window.location.href;
 		    name = name.replace(/[\[\]]/g, "\\$&");
@@ -243,7 +245,7 @@
 		    if (!results[2]) return '';
 		    return decodeURIComponent(results[2].replace(/\+/g, " "));
 	    }
-	    
+
 	    return '';
 	}
 
@@ -270,5 +272,5 @@
 			return value;
 		});
 	}
-	
+
 })()
