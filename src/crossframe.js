@@ -24,10 +24,10 @@
 
 	function CrossFrame( el, opts ) {
 		
-		opts = opts || {};
+		this._opts = opts || {};
 		
-		if( typeof opts.throttle !== 'number' ) {
-			opts.throttle = 50;
+		if( typeof this._opts.delay !== 'number' ) {
+			this._opts.delay = 50;
 		}
 
 		this.onMessage = this.onMessage.bind(this);
@@ -39,7 +39,9 @@
 		this.ready = this.ready.bind(this);
 		this._ready = this._ready.bind(this);
 		this._post = this._post.bind(this);
-		this._post = throttle( this._post, opts.throttle )
+		this._posting = false;
+		this._postNext = this._postNext.bind(this);
+		this._postQueue = [];
 		
 		this._el = el;
 
@@ -182,6 +184,18 @@
 	
 	CrossFrame.prototype._post = function( message ) {
 		this._debug('_post()', message);
+		
+		this._postQueue.push( message );
+		this._postNext();
+		
+	}
+	
+	CrossFrame.prototype._postNext = function() {
+			
+		if( this._posting )	return;
+		
+		var message = this._postQueue.shift();
+		if( typeof message === 'undefined' ) return;
 
 		var target;
 		if (this._el) {
@@ -191,9 +205,15 @@
 		}
 
 		if( target ) {
+			this._posting = true;
 			target.postMessage( message, '*' );
-		}
 		
+			setTimeout(function(){
+				this._posting = false;
+				this._postNext();
+			}.bind(this), this._opts.delay );
+		}
+			
 	}
 
 	if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
