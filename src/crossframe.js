@@ -8,54 +8,47 @@
 	var EVENT_MESSAGE = 'CROSSFRAME_MESSAGE';
 	var EVENT_READY = 'CROSSFRAME_READY';
 	
-	var reactNativeReady = false;
-	var reactNativeReadyFns = [];
-	var reactNative = ( getParameterByName('reactNative') === '1' );
-	if( reactNative ) {
+	var webviewReady = false;
+	var webviewReadyFns = [];
+	var webview = ( getParameterByName('webview') === '1' );
+	if( webview ) {
 		document.addEventListener('message', function( e ) {
-			if( e.data === EVENT_READY ) {
-				reactNativeReady = true;
-				reactNativeReadyFns.forEach(function(reactNativeReadyFn){
-					reactNativeReadyFn();
+			if( webviewReady === false && e.data === EVENT_READY ) {
+				webviewReady = true;
+				webviewReadyFns.forEach(function(webviewReadyFn){
+					webviewReadyFn();
 				});
 			}
 		});
 	}
-	
-	function onReactNativeReady( callback ) {
-		if( reactNativeReady ) {
-			callback();
-		} else {
-			reactNativeReadyFns.push( callback );
-		}
-	}
-	
-	function getParameterByName(name, url) {
-	    if (!url) url = window.location.href;
-	    name = name.replace(/[\[\]]/g, "\\$&");
-	    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-	        results = regex.exec(url);
-	    if (!results) return null;
-	    if (!results[2]) return '';
-	    return decodeURIComponent(results[2].replace(/\+/g, " "));
-	}
-
 
 	function CrossFrame( el ) {
 
 		this.onMessage = this.onMessage.bind(this);
+		this._clear = this._clear.bind(this);
+		this._debug = this._debug.bind(this);
+		this.on = this.on.bind(this);
+		this.emit = this.emit.bind(this);
+		this.destroy = this.destroy.bind(this);
+		this.ready = this.ready.bind(this);
+		this._ready = this._ready.bind(this);
+		
 		this._el = el;
 
 		this._clear();
 		
-		if( reactNative ) {
-			document.addEventListener('message', this.onMessage);
+		if( webview ) {
+			if( document && document.addEventListener ) {
+				document.addEventListener('message', this.onMessage);
+			}
 		} else {
-			window.addEventListener('message', this.onMessage);
+			if( window && window.addEventListener ) {
+				window.addEventListener('message', this.onMessage);
+			}
 		}
 	
-		if( reactNative ) {
-			onReactNativeReady(function(){
+		if( webview ) {
+			onWebviewReady(function(){
 				this._ready();				
 			}.bind(this));
 		} else {
@@ -73,26 +66,28 @@
 		this._readyFns = [];
 		this._isReady = false;
 		
-		if( reactNative ) {
-			document.removeEventListener('message', this.onMessage);
+		if( webview ) {
+			if( document && document.removeEventListener ) {
+				document.removeEventListener('message', this.onMessage);
+			}
 		} else {
-			window.removeEventListener('message', this.onMessage);
+			if( window && window.removeEventListener ) {
+				window.removeEventListener('message', this.onMessage);
+			}
 		}
 	}
 
 	CrossFrame.prototype._debug = function(){
-		if( window.location.href.indexOf('http://127.0.0.1') === 0 ) {
-			console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
-		}
+		console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
 	}
 
 	CrossFrame.prototype.onMessage = function( e ){
-		this._debug('onMessage', window.location.href, arguments)
-
 		if( !e.data || typeof e.data !== 'string' ) return;
 		if( e.data.indexOf(EVENT_MESSAGE) !== 0 ) return;
+		
+		this._debug('onMessage', e)
 
-		var obj = this._jsonToObj( e.data.substr( EVENT_MESSAGE.length ) );
+		var obj = jsonToObj( e.data.substr( EVENT_MESSAGE.length ) );
 		if( obj.type === 'tx' ) {
 
 			var callback = function( err, result ){
@@ -102,7 +97,7 @@
 					callbackId: obj.callbackId
 				}
 
-				this._post( message );
+				this.postMessage( message );
 			}.bind(this)
 
 			var eventListeners = this._eventlisteners[ obj.event ];
@@ -142,7 +137,7 @@
 			callbackId: callbackId
 		}
 
-		this._post( message );
+		this.postMessage( message );
 
 		return this;
 	}
@@ -169,7 +164,16 @@
 		});
 	}
 
+	CrossFrame.prototype.postReady = function( message ) {
+		this._post( EVENT_READY );
+	}
+
+	CrossFrame.prototype.postMessage = function( message ) {
+		this._post( EVENT_MESSAGE + objToJson(message) );
+	}
+	
 	CrossFrame.prototype._post = function( message ) {
+		this._debug('_post()', message);
 
 		var target;
 		if (this._el) {
@@ -179,12 +183,66 @@
 		}
 
 		if( target ) {
-			target.postMessage( EVENT_MESSAGE + this._objToJson(message), '*' );
+			target.postMessage( message, '*' );
 		}
-
+		
 	}
 
-	CrossFrame.prototype._objToJson = function( obj ) {
+	if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+		module.exports = CrossFrame;
+	}
+	else {
+		window.CrossFrame = CrossFrame;
+	}
+	
+	function onWebviewReady( callback ) {
+		if( webviewReady ) {
+			callback();
+		} else {
+			webviewReadyFns.push( callback );
+		}
+	}
+	
+	function getParameterByName(name, url) {
+		if( window 
+		 && window.location 
+		 && window.location.href ) {
+		    if (!url) url = window.location.href;
+		    name = name.replace(/[\[\]]/g, "\\$&");
+		    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+		        results = regex.exec(url);
+		    if (!results) return null;
+		    if (!results[2]) return '';
+		    return decodeURIComponent(results[2].replace(/\+/g, " "));
+	    }
+	    
+	    return '';
+	}
+	
+	function throttle(fn, threshhold, scope) {
+	  threshhold || (threshhold = 250);
+	  var last,
+	      deferTimer;
+	  return function () {
+	    var context = scope || this;
+	  
+	    var now = +new Date,
+	        args = arguments;
+	    if (last && now < last + threshhold) {
+	      // hold on to it
+	      clearTimeout(deferTimer);
+	      deferTimer = setTimeout(function () {
+	        last = now;
+	        fn.apply(context, args);
+	      }, threshhold);
+	    } else {
+	      last = now;
+	      fn.apply(context, args);
+	    }
+	  };
+	}
+
+	function objToJson( obj ) {
 		return JSON.stringify( obj, function replacer( key, value ) {
 			if( value instanceof Error ) {
 				return {
@@ -197,7 +255,7 @@
 		});
 	}
 
-	CrossFrame.prototype._jsonToObj = function( json ) {
+	function jsonToObj( json ) {
 		return JSON.parse( json, function reviver( key, value ) {
 			if( value && value.type ) {
 				if( value.type === 'Error' ) {
@@ -206,13 +264,6 @@
 			}
 			return value;
 		});
-	}
-
-	if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-		module.exports = CrossFrame;
-	}
-	else {
-		window.CrossFrame = CrossFrame;
 	}
 	
 })()
