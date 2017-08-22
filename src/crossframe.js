@@ -5,14 +5,15 @@
 
 (function() {
 
-	var POST_MESSAGE_EVENT = 'CROSSFRAME_MESSAGE';
+	var EVENT_MESSAGE = 'CROSSFRAME_MESSAGE';
+	var EVENT_READY = 'CROSSFRAME_READY';
 	
 	var reactNativeReady = false;
 	var reactNativeReadyFns = [];
 	var reactNative = ( getParameterByName('reactNative') === '1' );
 	if( reactNative ) {
 		document.addEventListener('message', function( e ) {
-			if( e.data === 'CROSSFRAME_READY' ) {
+			if( e.data === EVENT_READY ) {
 				reactNativeReady = true;
 				reactNativeReadyFns.forEach(function(reactNativeReadyFn){
 					reactNativeReadyFn();
@@ -89,9 +90,9 @@
 		this._debug('onMessage', window.location.href, arguments)
 
 		if( !e.data || typeof e.data !== 'string' ) return;
-		if( e.data.indexOf(POST_MESSAGE_EVENT) !== 0 ) return;
+		if( e.data.indexOf(EVENT_MESSAGE) !== 0 ) return;
 
-		var obj = this._jsonToObj( e.data.substr( POST_MESSAGE_EVENT.length ) );
+		var obj = this._jsonToObj( e.data.substr( EVENT_MESSAGE.length ) );
 		if( obj.type === 'tx' ) {
 
 			var callback = function( err, result ){
@@ -178,7 +179,7 @@
 		}
 
 		if( target ) {
-			target.postMessage( POST_MESSAGE_EVENT + this._objToJson(message), '*' );
+			target.postMessage( EVENT_MESSAGE + this._objToJson(message), '*' );
 		}
 
 	}
