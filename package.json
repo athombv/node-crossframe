@@ -12,5 +12,9 @@
   "bugs": {
     "url": "https://github.com/athombv/crossframe/issues"
   },
-  "homepage": "https://github.com/athombv/crossframe#readme"
+  "homepage": "https://github.com/athombv/crossframe#readme",
+  "config": {
+    "npmPublishTagProduction": "latest",
+    "npmPublishTagStaging": "beta"
+  }
 }
