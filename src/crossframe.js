@@ -1,19 +1,65 @@
-(function() {
-	/*
-		CrossFrame.js - v1.0.0
-		Created by Emile Nijssen - www.emilenijssen.nl
-	*/
+/*
+	CrossFrame.js - v1.0.0
+	Created by Emile Nijssen - www.emilenijssen.nl
+*/
 
-	var POST_MESSAGE_EVENT = 'CROSSFRAME';
+(function() {
+
+	var POST_MESSAGE_EVENT = 'CROSSFRAME_MESSAGE';
+	
+	var reactNativeReady = false;
+	var reactNativeReadyFns = [];
+	var reactNative = ( getParameterByName('reactNative') === '1' );
+	if( reactNative ) {
+		document.addEventListener('message', function( e ) {
+			if( e.data === 'CROSSFRAME_READY' ) {
+				reactNativeReady = true;
+				reactNativeReadyFns.forEach(function(reactNativeReadyFn){
+					reactNativeReadyFn();
+				});
+			}
+		});
+	}
+	
+	function onReactNativeReady( callback ) {
+		if( reactNativeReady ) {
+			callback();
+		} else {
+			reactNativeReadyFns.push( callback );
+		}
+	}
+	
+	function getParameterByName(name, url) {
+	    if (!url) url = window.location.href;
+	    name = name.replace(/[\[\]]/g, "\\$&");
+	    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+	        results = regex.exec(url);
+	    if (!results) return null;
+	    if (!results[2]) return '';
+	    return decodeURIComponent(results[2].replace(/\+/g, " "));
+	}
+
 
 	function CrossFrame( el ) {
 
-		this._onMessage = this._onMessage.bind(this);
+		this.onMessage = this.onMessage.bind(this);
 		this._el = el;
 
 		this._clear();
-
-		window.addEventListener('message', this._onMessage);
+		
+		if( reactNative ) {
+			document.addEventListener('message', this.onMessage);
+		} else {
+			window.addEventListener('message', this.onMessage);
+		}
+	
+		if( reactNative ) {
+			onReactNativeReady(function(){
+				this._ready();				
+			}.bind(this));
+		} else {
+			this._ready();		
+		}
 
 		return this;
 
@@ -23,7 +69,14 @@
 		this._eventlisteners = {};
 		this._callbackFns = {};
 		this._callbackId = 0;
-		window.addEventListener('message', this._onMessage);
+		this._readyFns = [];
+		this._isReady = false;
+		
+		if( reactNative ) {
+			document.removeEventListener('message', this.onMessage);
+		} else {
+			window.removeEventListener('message', this.onMessage);
+		}
 	}
 
 	CrossFrame.prototype._debug = function(){
@@ -32,8 +85,8 @@
 		}
 	}
 
-	CrossFrame.prototype._onMessage = function( e ){
-		this._debug('_onMessage', window.location.href, arguments)
+	CrossFrame.prototype.onMessage = function( e ){
+		this._debug('onMessage', window.location.href, arguments)
 
 		if( !e.data || typeof e.data !== 'string' ) return;
 		if( e.data.indexOf(POST_MESSAGE_EVENT) !== 0 ) return;
@@ -96,6 +149,24 @@
 	CrossFrame.prototype.destroy = function(){
 		this._clear();
 	}
+	
+	CrossFrame.prototype.ready = function( callback ){
+		
+		if( this._isReady ) {
+			callback();
+		} else {		
+			this._readyFns.push( callback );
+		}
+	}
+	
+	CrossFrame.prototype._ready = function() {
+		
+		this._isReady = true;
+		
+		this._readyFns.forEach(function(readyFn){
+			readyFn();
+		});
+	}
 
 	CrossFrame.prototype._post = function( message ) {
 
@@ -142,4 +213,5 @@
 	else {
 		window.CrossFrame = CrossFrame;
 	}
+	
 })()

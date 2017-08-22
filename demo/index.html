@@ -7,21 +7,25 @@
 		window.addEventListener('load', function(){
 			var frameEl = document.getElementById('myframe');
 			var cf = new CrossFrame( frameEl );
-				cf.on('iframe_to_parent', function( data, callback ) {
-					console.log('on iframe_to_parent', data);
-
-					callback( null, true );
-				})
-				cf.emit('parent_to_iframe', { x: 'y' }, function( err, result ){
-					console.log('parent_to_iframe callback', 'err:', err, 'result:', result);
-				})
+				cf.ready(function(){
+					console.log('[index.html] ready');
+					
+					cf.on('iframe_to_parent', function( data, callback ) {
+						console.log('[index.html] on iframe_to_parent', data);
+	
+						callback( null, true );
+					})
+					cf.emit('parent_to_iframe', { x: 'y' }, function( err, result ){
+						console.log('[index.html] parent_to_iframe callback', 'err:', err, 'result:', result);
+					});
+				});
 		});
 		</script>
 
 	</head>
 	<body>
 
-		<iframe id="myframe" src="frame.html" width="600" height="400" sandbox="allow-scripts"></iframe>
+		<iframe id="myframe" src="frame.html?reactNative=1" width="600" height="400" sandbox="allow-scripts"></iframe>
 
 	</body>
 </html>
