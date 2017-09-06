@@ -88,7 +88,8 @@
 	}
 
 	CrossFrame.prototype._debug = function(){
-		console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
+		if( window.DEBUG )
+			console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
 	}
 
 	CrossFrame.prototype.onMessage = function( e ){
