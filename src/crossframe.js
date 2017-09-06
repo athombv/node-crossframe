@@ -22,7 +22,13 @@
 		});
 	}
 
-	function CrossFrame( el ) {
+	function CrossFrame( el, opts ) {
+		
+		this._opts = opts || {};
+		
+		if( typeof this._opts.delay !== 'number' ) {
+			this._opts.delay = 50;
+		}
 
 		this.onMessage = this.onMessage.bind(this);
 		this._clear = this._clear.bind(this);
@@ -32,6 +38,10 @@
 		this.destroy = this.destroy.bind(this);
 		this.ready = this.ready.bind(this);
 		this._ready = this._ready.bind(this);
+		this._post = this._post.bind(this);
+		this._posting = false;
+		this._postNext = this._postNext.bind(this);
+		this._postQueue = [];
 		
 		this._el = el;
 
@@ -78,7 +88,8 @@
 	}
 
 	CrossFrame.prototype._debug = function(){
-		console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
+		if( window.DEBUG )
+			console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
 	}
 
 	CrossFrame.prototype.onMessage = function( e ){
@@ -174,6 +185,18 @@
 	
 	CrossFrame.prototype._post = function( message ) {
 		this._debug('_post()', message);
+		
+		this._postQueue.push( message );
+		this._postNext();
+		
+	}
+	
+	CrossFrame.prototype._postNext = function() {
+			
+		if( this._posting )	return;
+		
+		var message = this._postQueue.shift();
+		if( typeof message === 'undefined' ) return;
 
 		var target;
 		if (this._el) {
@@ -183,9 +206,15 @@
 		}
 
 		if( target ) {
+			this._posting = true;
 			target.postMessage( message, '*' );
-		}
 		
+			setTimeout(function(){
+				this._posting = false;
+				this._postNext();
+			}.bind(this), this._opts.delay );
+		}
+			
 	}
 
 	if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
@@ -217,29 +246,6 @@
 	    }
 	    
 	    return '';
-	}
-	
-	function throttle(fn, threshhold, scope) {
-	  threshhold || (threshhold = 250);
-	  var last,
-	      deferTimer;
-	  return function () {
-	    var context = scope || this;
-	  
-	    var now = +new Date,
-	        args = arguments;
-	    if (last && now < last + threshhold) {
-	      // hold on to it
-	      clearTimeout(deferTimer);
-	      deferTimer = setTimeout(function () {
-	        last = now;
-	        fn.apply(context, args);
-	      }, threshhold);
-	    } else {
-	      last = now;
-	      fn.apply(context, args);
-	    }
-	  };
 	}
 
 	function objToJson( obj ) {

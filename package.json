@@ -1,6 +1,6 @@
 {
   "name": "crossframe",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Send messages between a page and its (sandboxed) iframes with ease.",
   "main": "src/crossframe.js",
   "repository": {
@@ -12,5 +12,9 @@
   "bugs": {
     "url": "https://github.com/athombv/crossframe/issues"
   },
-  "homepage": "https://github.com/athombv/crossframe#readme"
+  "homepage": "https://github.com/athombv/crossframe#readme",
+  "config": {
+    "npmPublishTagProduction": "latest",
+    "npmPublishTagStaging": "beta"
+  }
 }
