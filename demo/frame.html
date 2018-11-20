@@ -12,6 +12,7 @@
 					cf.on('parent_to_iframe', function( data, callback ){
 						console.log('[frame.html] on parent_to_iframe', data);
 						callback( new Error('Test error!') );
+						//callback( null, data );
 					})
 					cf.emit('iframe_to_parent', { foo: 'bar' }, function( err, result ){
 						console.log('[frame.html] iframe_to_parent callback', 'err:', err, 'result:', result);

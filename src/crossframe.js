@@ -1,12 +1,12 @@
 /*
-	CrossFrame.js - v1.0.0
-	Created by Emile Nijssen - www.emilenijssen.nl
+	CrossFrame.js
+	Created by Emile Nijssen - https://www.emilenijssen.nl
 */
 
 (function() {
 
-	var EVENT_MESSAGE = 'CROSSFRAME_MESSAGE';
-	var EVENT_READY = 'CROSSFRAME_READY';
+	var EVENT_MESSAGE = 'CF2_MESSAGE';
+	var EVENT_READY = 'CF2_READY';
 	
 	var webviewReady = false;
 	var webviewReadyFns = [];
@@ -98,7 +98,10 @@
 		
 		this._debug('onMessage', e)
 
-		var obj = jsonToObj( e.data.substr( EVENT_MESSAGE.length ) );
+		var str = e.data;
+			str = str.substr( EVENT_MESSAGE.length );
+			str = hexDecode(str);
+		var obj = jsonToObj( str );
 		if( obj.type === 'tx' ) {
 
 			var callback = function( err, result ){
@@ -180,7 +183,7 @@
 	}
 
 	CrossFrame.prototype.postMessage = function( message ) {
-		this._post( EVENT_MESSAGE + objToJson(message) );
+		this._post( EVENT_MESSAGE + hexEncode( objToJson(message) ) );
 	}
 	
 	CrossFrame.prototype._post = function( message ) {
@@ -270,6 +273,29 @@
 			}
 			return value;
 		});
+	}
+	
+	function hexEncode(input){
+	    var hex, i;
+	
+	    var result = "";
+	    for (i=0; i<input.length; i++) {
+	        hex = input.charCodeAt(i).toString(16);
+	        result += ("000"+hex).slice(-4);
+	    }
+	
+	    return result
+	}
+
+	function hexDecode(input){
+	    var j;
+	    var hexes = input.match(/.{1,4}/g) || [];
+	    var back = "";
+	    for(j = 0; j<hexes.length; j++) {
+	        back += String.fromCharCode(parseInt(hexes[j], 16));
+	    }
+	
+	    return back;
 	}
 	
 })()
