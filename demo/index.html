@@ -15,7 +15,7 @@
 	
 						callback( null, true );
 					})
-					cf.emit('parent_to_iframe', { x: 'y' }, function( err, result ){
+					cf.emit('parent_to_iframe', { url: 'https://callback.athom.com/oauth2/?token=5bf2d19ad3b5d80d4d7552bf&url=https%3A%2F%2Fapi.thermosmart.com%2Foauth2%2Fauthorize%3Fresponse_type%3Dcode%26client_id%3Dapi-ath-00c27c45f1d70883%26redirect_uri%3Dhttps%3A%2F%2Fcallback.athom.com%2Foauth2%2Fcallback%2F' }, function( err, result ){
 						console.log('[index.html] parent_to_iframe callback', 'err:', err, 'result:', result);
 					});
 				});
