@@ -38,13 +38,13 @@
 		this.ready = this.ready.bind(this);
 		this._ready = this._ready.bind(this);
 		this._post = this._post.bind(this);
+		this._destroyed = false;
 		this._posting = false;
 		this._postNext = this._postNext.bind(this);
 		this._postQueue = [];
-		
-		this._clear();
-
         this._el = el;
+
+		this._clear();
 
 		if( webview ) {
 			if( document && document.addEventListener ) {
@@ -74,7 +74,6 @@
 		this._callbackId = 0;
 		this._readyFns = [];
 		this._isReady = false;
-		this._el = null;
 
 		if( webview ) {
 			if( document && document.removeEventListener ) {
@@ -85,6 +84,8 @@
 				window.removeEventListener('message', this.onMessage);
 			}
 		}
+
+        this._destroyed = true;
 	};
 
 	CrossFrame.prototype._debug = function(){
@@ -137,7 +138,6 @@
 	};
 
 	CrossFrame.prototype.emit = function( event, data, callback ) {
-
 		var callbackId = null;
 		if( typeof callback === 'function' ) {
 			callbackId = ++this._callbackId;
@@ -194,7 +194,7 @@
 	};
 
 	CrossFrame.prototype._postNext = function() {
-
+        if( this._destroyed ) return;
 		if( this._posting )	return;
 
 		var message = this._postQueue.shift();
