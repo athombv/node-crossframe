@@ -4,10 +4,9 @@
 */
 
 (function() {
-
 	var EVENT_MESSAGE = 'CF2_MESSAGE';
 	var EVENT_READY = 'CF2_READY';
-	
+
 	var webviewReady = false;
 	var webviewReadyFns = [];
 	var webview = ( getParameterByName('webview') === '1' );
@@ -23,9 +22,9 @@
 	}
 
 	function CrossFrame( el, opts ) {
-		
+
 		this._opts = opts || {};
-		
+
 		if( typeof this._opts.delay !== 'number' ) {
 			this._opts.delay = 50;
 		}
@@ -43,10 +42,10 @@
 		this._postNext = this._postNext.bind(this);
 		this._postQueue = [];
 		
-		this._el = el;
-
 		this._clear();
-		
+
+        this._el = el;
+
 		if( webview ) {
 			if( document && document.addEventListener ) {
 				document.addEventListener('message', this.onMessage);
@@ -56,13 +55,13 @@
 				window.addEventListener('message', this.onMessage);
 			}
 		}
-	
+
 		if( webview ) {
 			onWebviewReady(function(){
-				this._ready();				
+				this._ready();
 			}.bind(this));
 		} else {
-			this._ready();		
+			this._ready();
 		}
 
 		return this;
@@ -75,7 +74,8 @@
 		this._callbackId = 0;
 		this._readyFns = [];
 		this._isReady = false;
-		
+		this._el = null;
+
 		if( webview ) {
 			if( document && document.removeEventListener ) {
 				document.removeEventListener('message', this.onMessage);
@@ -85,18 +85,18 @@
 				window.removeEventListener('message', this.onMessage);
 			}
 		}
-	}
+	};
 
 	CrossFrame.prototype._debug = function(){
 		if( window.DEBUG )
 			console.log.bind( null, '[CrossFrame]' ).apply( null, arguments );
-	}
+	};
 
 	CrossFrame.prototype.onMessage = function( e ){
 		if( !e.data || typeof e.data !== 'string' ) return;
 		if( e.data.indexOf(EVENT_MESSAGE) !== 0 ) return;
-		
-		this._debug('onMessage', e)
+
+		this._debug('onMessage', e);
 
 		var str = e.data;
 			str = str.substr( EVENT_MESSAGE.length );
@@ -109,10 +109,10 @@
 					type: 'cb',
 					args: args = Array.prototype.slice.call(arguments),
 					callbackId: obj.callbackId
-				}
+				};
 
 				this.postMessage( message );
-			}.bind(this)
+			}.bind(this);
 
 			var eventListeners = this._eventlisteners[ obj.event ];
 			if( eventListeners ) {
@@ -127,14 +127,14 @@
 				callbackFn.apply( callbackFn, obj.args );
 			}
 		}
-	}
+	};
 
 	CrossFrame.prototype.on = function( event, callback ) {
 		this._eventlisteners[ event ] = this._eventlisteners[ event ] || [];
 		this._eventlisteners[ event ].push( callback );
 
 		return this;
-	}
+	};
 
 	CrossFrame.prototype.emit = function( event, data, callback ) {
 
@@ -149,55 +149,54 @@
 			event: event,
 			data: data,
 			callbackId: callbackId
-		}
+		};
 
 		this.postMessage( message );
 
 		return this;
-	}
+	};
 
 	CrossFrame.prototype.destroy = function(){
 		this._clear();
-	}
-	
+	};
+
 	CrossFrame.prototype.ready = function( callback ){
-		
+
 		if( this._isReady ) {
 			callback();
-		} else {		
+		} else {
 			this._readyFns.push( callback );
 		}
-	}
-	
+	};
+
 	CrossFrame.prototype._ready = function() {
-		
+
 		this._isReady = true;
-		
+
 		this._readyFns.forEach(function(readyFn){
 			readyFn();
 		});
-	}
+	};
 
 	CrossFrame.prototype.postReady = function( message ) {
 		this._post( EVENT_READY );
-	}
+	};
 
 	CrossFrame.prototype.postMessage = function( message ) {
 		this._post( EVENT_MESSAGE + hexEncode( objToJson(message) ) );
-	}
-	
+	};
+
 	CrossFrame.prototype._post = function( message ) {
 		this._debug('_post()', message);
-		
+
 		this._postQueue.push( message );
 		this._postNext();
-		
-	}
-	
+	};
+
 	CrossFrame.prototype._postNext = function() {
-			
+
 		if( this._posting )	return;
-		
+
 		var message = this._postQueue.shift();
 		if( typeof message === 'undefined' ) return;
 
@@ -211,14 +210,13 @@
 		if( target ) {
 			this._posting = true;
 			target.postMessage( message, '*' );
-		
+
 			setTimeout(function(){
 				this._posting = false;
 				this._postNext();
 			}.bind(this), this._opts.delay );
 		}
-			
-	}
+	};
 
 	if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
 		module.exports = CrossFrame;
@@ -226,7 +224,7 @@
 	else {
 		window.CrossFrame = CrossFrame;
 	}
-	
+
 	function onWebviewReady( callback ) {
 		if( webviewReady ) {
 			callback();
@@ -234,10 +232,10 @@
 			webviewReadyFns.push( callback );
 		}
 	}
-	
+
 	function getParameterByName(name, url) {
-		if( window 
-		 && window.location 
+		if( window
+		 && window.location
 		 && window.location.href ) {
 		    if (!url) url = window.location.href;
 		    name = name.replace(/[\[\]]/g, "\\$&");
@@ -247,7 +245,7 @@
 		    if (!results[2]) return '';
 		    return decodeURIComponent(results[2].replace(/\+/g, " "));
 	    }
-	    
+
 	    return '';
 	}
 
@@ -274,16 +272,16 @@
 			return value;
 		});
 	}
-	
+
 	function hexEncode(input){
 	    var hex, i;
-	
+
 	    var result = "";
 	    for (i=0; i<input.length; i++) {
 	        hex = input.charCodeAt(i).toString(16);
 	        result += ("000"+hex).slice(-4);
 	    }
-	
+
 	    return result
 	}
 
@@ -294,8 +292,7 @@
 	    for(j = 0; j<hexes.length; j++) {
 	        back += String.fromCharCode(parseInt(hexes[j], 16));
 	    }
-	
+
 	    return back;
 	}
-	
-})()
+})();
