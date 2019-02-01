@@ -84,8 +84,6 @@
 				window.removeEventListener('message', this.onMessage);
 			}
 		}
-
-        this._destroyed = true;
 	};
 
 	CrossFrame.prototype._debug = function(){
@@ -158,6 +156,7 @@
 
 	CrossFrame.prototype.destroy = function(){
 		this._clear();
+        this._destroyed = true;
 	};
 
 	CrossFrame.prototype.ready = function( callback ){
