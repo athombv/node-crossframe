@@ -1,6 +1,6 @@
 {
   "name": "crossframe",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Send messages between a page and its (sandboxed) iframes with ease.",
   "main": "src/crossframe.js",
   "repository": {
