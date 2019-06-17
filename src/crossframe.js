@@ -208,7 +208,7 @@
 
 		if( target ) {
 			this._posting = true;
-			target.postMessage( message, '*' );
+			sendPostMessage(target, message);
 
 			setTimeout(function(){
 				this._posting = false;
@@ -216,6 +216,21 @@
 			}.bind(this), this._opts.delay );
 		}
 	};
+
+	/**
+	 * Send the post message (transformed for react native webview 5.x)
+	 * @param target
+	 * @param message
+	 */
+	function sendPostMessage(target, message) {
+		if(target.injectJavaScript) {
+			var js = `window.document.dispatchEvent(new MessageEvent('message', {data: '${message}'}));true;`;
+			target.injectJavaScript(js);
+		}
+		else {
+			target.postMessage( message, '*' );
+		}
+	}
 
 	if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
 		module.exports = CrossFrame;
